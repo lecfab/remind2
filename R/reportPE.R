@@ -52,7 +52,7 @@ reportPE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
   demPE  <- readGDX(gdx, name = c("vm_demPe", "v_pedem"), field = "l", restore_zeros = FALSE, format = "first_found") * TWa_2_EJ
   demPE  <- demPE[pe2se]
   prodSE <- readGDX(gdx, name = c("vm_prodSe", "v_seprod"), field = "l", restore_zeros = FALSE, format = "first_found") * TWa_2_EJ
-  prodSE <- mselect(prodSE, all_enty1 = sety)
+  prodSE <- mselect(prodSE, all_enty1 = sety, all_te = te)
   fuelex <- readGDX(gdx, c("vm_fuExtr", "vm_fuelex"), field = "l", format = "first_found") * TWa_2_EJ
   Mport  <- readGDX(gdx, c("vm_Mport"), field = "l", format = "first_found") * TWa_2_EJ
   Xport  <- readGDX(gdx, c("vm_Xport"), field = "l", format = "first_found") * TWa_2_EJ
@@ -119,41 +119,39 @@ reportPE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
   tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = c("pegeo", "pehyd", "pewin", "pesol")), dim = 3), "PE|Non-Biomass Renewables (EJ/yr)"))
   tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pehyd"), dim = 3),    "PE|+|Hydro (EJ/yr)"))
   tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pewin"), dim = 3),    "PE|+|Wind (EJ/yr)"))
-  if ("windon" %in% te) {
-    tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pewin", all_te = "windon"), dim = 3),  "PE|Wind|+|Onshore (EJ/yr)"))
-    tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pewin", all_te = "windoff"), dim = 3), "PE|Wind|+|Offshore (EJ/yr)"))
-  } else {
-    tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pewin", all_te = "wind"), dim = 3),    "PE|Wind|+|Onshore (EJ/yr)"))
-    tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pewin", all_te = "windoff"), dim = 3), "PE|Wind|+|Offshore (EJ/yr)"))
-  }
   tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pesol"), dim = 3),    "PE|+|Solar (EJ/yr)"))
   tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pegeo"), dim = 3),    "PE|+|Geothermal (EJ/yr)"))
+  
+  windonStr <- ifelse ("windon" %in% te, "windon", "wind")
+  tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pewin", all_te = windonStr), dim = 3), "PE|Wind|+|Onshore (EJ/yr)"))
+  tmp2 <- mbind(tmp2, setNames(dimSums(mselect(prodSE, all_enty = "pewin", all_te = "windoff"), dim = 3), "PE|Wind|+|Offshore (EJ/yr)"))
+
 
   # primary energy consumption per carrier  --- use function declared above
-  tmp3 <- mbind(pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seel",                     name = "PE|Biomass|Electricity (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seel", teccs,               name = "PE|Biomass|Electricity|w/ CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seel", tenoccs,             name = "PE|Biomass|Electricity|w/o CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Gas,                     name = "PE|Biomass|Gases (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Gas, teccs,               name = "PE|Biomass|Gases|w/ CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Gas, tenoccs,             name = "PE|Biomass|Gases|w/o CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seh2",                     name = "PE|Biomass|Hydrogen (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seh2", teccs,               name = "PE|Biomass|Hydrogen|w/ CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seh2", tenoccs,             name = "PE|Biomass|Hydrogen|w/o CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq,                    name = "PE|Biomass|Liquids (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq, teccs,               name = "PE|Biomass|Liquids|w/ CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq, tenoccs,             name = "PE|Biomass|Liquids|w/o CC (EJ/yr)"),
+  tmp3 <- mbind(pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seel",                  name = "PE|Biomass|Electricity (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seel", teccs,           name = "PE|Biomass|Electricity|w/ CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seel", tenoccs,         name = "PE|Biomass|Electricity|w/o CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Gas,                  name = "PE|Biomass|Gases (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Gas, teccs,           name = "PE|Biomass|Gases|w/ CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Gas, tenoccs,         name = "PE|Biomass|Gases|w/o CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seh2",                  name = "PE|Biomass|Hydrogen (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seh2", teccs,           name = "PE|Biomass|Hydrogen|w/ CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, "seh2", tenoccs,         name = "PE|Biomass|Hydrogen|w/o CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq,                  name = "PE|Biomass|Liquids (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq, teccs,           name = "PE|Biomass|Liquids|w/ CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq, tenoccs,         name = "PE|Biomass|Liquids|w/o CC (EJ/yr)"),
 
-                pe_carrier(demPE, dataoc, oc2te, sety, "pebiolc", se_Liq,                name = "PE|Biomass|Liquids|Cellulosic (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, "pebiolc", se_Liq, teccs,          name = "PE|Biomass|Liquids|Cellulosic|w/ CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, "pebiolc", se_Liq, tenoccs,        name = "PE|Biomass|Liquids|Cellulosic|w/o CC (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, c("pebioil", "pebios"), se_Liq,  name = "PE|Biomass|Liquids|Non-Cellulosic (EJ/yr)"),
-                pe_carrier(demPE, dataoc, oc2te, sety, "pebios", se_Liq,                 name = "PE|Biomass|Liquids|Conventional Ethanol (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, "pebiolc", se_Liq,              name = "PE|Biomass|Liquids|Cellulosic (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, "pebiolc", se_Liq, teccs,       name = "PE|Biomass|Liquids|Cellulosic|w/ CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, "pebiolc", se_Liq, tenoccs,     name = "PE|Biomass|Liquids|Cellulosic|w/o CC (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, c("pebioil", "pebios"), se_Liq, name = "PE|Biomass|Liquids|Non-Cellulosic (EJ/yr)"),
+                pe_carrier(demPE, dataoc, oc2te, sety, "pebios", se_Liq,               name = "PE|Biomass|Liquids|Conventional Ethanol (EJ/yr)"),
                 pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq, c("bioftrec", "bioftcrec", "biodiesel"),
-                                                                                     name = "PE|Biomass|Liquids|Biodiesel (EJ/yr)"),
+                                                                                       name = "PE|Biomass|Liquids|Biodiesel (EJ/yr)"),
                 pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq, c("bioftcrec"),
-                                                                                     name = "PE|Biomass|Liquids|Biodiesel|w/ CC (EJ/yr)"),
+                                                                                       name = "PE|Biomass|Liquids|Biodiesel|w/ CC (EJ/yr)"),
                 pe_carrier(demPE, dataoc, oc2te, sety, pebio, se_Liq, c("bioftrec", "biodiesel"),
-                                                                                     name = "PE|Biomass|Liquids|Biodiesel|w/o CC (EJ/yr)"),
+                                                                                       name = "PE|Biomass|Liquids|Biodiesel|w/o CC (EJ/yr)"),
 
 
 
