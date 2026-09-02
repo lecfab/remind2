@@ -20,6 +20,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Renato Rodrigues \email{renato.rodrigues@pik-potsdam.de}
   \item Lavinia Baumstark
   \item Falk Benke
   \item David Bantje
@@ -56,6 +57,7 @@ Authors:
   \item Jessica Strefler
   \item Philipp Verpoort
   \item Pascal Weigmann
+  \item Simon Krogmann
 }
 
 }
